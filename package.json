@@ -1,7 +1,7 @@
 {
-  "name": "toll-roads-app",
+  "name": "road-segment-app",
   "version": "4.4.0",
-  "description": "Toll roads web app",
+  "description": "Road segment web app",
   "homepage": ".",
   "bugs": {
     "url": "https://github.com/coreui/coreui-free-react-admin-template/issues"
@@ -30,6 +30,7 @@
     "@coreui/react": "^4.3.1",
     "@coreui/react-chartjs": "^2.1.0",
     "@coreui/utils": "^1.3.1",
+    "@tanstack/react-table": "^8.5.13",
     "chart.js": "^3.9.1",
     "classnames": "^2.3.1",
     "core-js": "^3.24.1",

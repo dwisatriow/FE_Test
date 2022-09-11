@@ -62,6 +62,8 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 
+import { PreviewPicture, SegmentActions } from '../../components/index'
+
 // type Person = {
 //   firstName: string
 //   lastName: string
@@ -71,66 +73,65 @@ import {
 //   progress: number
 // }
 
-const defaultData = [
-  {
-    firstName: 'tanner',
-    lastName: 'linsley',
-    age: 24,
-    visits: 100,
-    status: 'In Relationship',
-    progress: 50,
-  },
-  {
-    firstName: 'tandy',
-    lastName: 'miller',
-    age: 40,
-    visits: 40,
-    status: 'Single',
-    progress: 80,
-  },
-  {
-    firstName: 'joe',
-    lastName: 'dirte',
-    age: 45,
-    visits: 20,
-    status: 'Complicated',
-    progress: 10,
-  },
-]
+// const defaultData = [
+//   {
+//     firstName: 'tanner',
+//     lastName: 'linsley',
+//     age: 24,
+//     visits: 100,
+//     status: 'In Relationship',
+//     progress: 50,
+//   },
+//   {
+//     firstName: 'tandy',
+//     lastName: 'miller',
+//     age: 40,
+//     visits: 40,
+//     status: 'Single',
+//     progress: 80,
+//   },
+//   {
+//     firstName: 'joe',
+//     lastName: 'dirte',
+//     age: 45,
+//     visits: 20,
+//     status: 'Complicated',
+//     progress: 10,
+//   },
+// ]
 
 const columnHelper = createColumnHelper()
 
 const columns = [
   columnHelper.accessor('id', {
     header: () => 'No',
-    cell: (info) => info.getValue(),
-    footer: (info) => info.column.id,
+    cell: (info) => info.row.index + 1,
   }),
   columnHelper.accessor('ruas', {
     header: () => 'Ruas',
-    cell: (info) => info.getValue(),
-    footer: (info) => info.column.id,
+    cell: (info) => info.getValue().replace('ruas', 'Ruas'),
   }),
   columnHelper.accessor('unit', {
     header: () => 'Unit Kerja',
     cell: (info) => info.getValue(),
-    footer: (info) => info.column.id,
   }),
-  columnHelper.accessor('picture', {
-    header: () => 'Gambar',
-    cell: (info) => info.getValue(),
-    footer: (info) => info.column.id,
+  columnHelper.display({
+    header: 'Gambar',
+    cell: (info) => <PreviewPicture id={info.row.original.id} />,
   }),
   columnHelper.accessor('date_create', {
     header: 'Tanggal',
-    cell: (info) => info.getValue(),
-    footer: (info) => info.column.id,
+    cell: (info) => new Date(info.getValue()).toLocaleDateString('id-ID'),
+  }),
+  columnHelper.display({
+    header: 'Aksi',
+    cell: (info) => <SegmentActions id={info.row.original.id} />,
   }),
 ]
 
 const apiUrl = 'https://630c319983986f74a7bb0dc5.mockapi.io/jm/ruas'
 
-const Dashboard = () => {
+const RoadSegments = () => {
   // const random = (min, max) => Math.floor(Math.random() * (max - min + 1) + min)
 
   // const progressExample = [
@@ -269,7 +270,7 @@ const Dashboard = () => {
     dispatch({ type: 'set', roadSegments: resJson })
   }
 
-  const [data, setData] = React.useState(() => [...defaultData])
+  // const [data, setData] = React.useState(() => [...defaultData])
   const rerender = React.useReducer(() => ({}), {})[1]
 
   const table = useReactTable({
@@ -278,53 +279,54 @@ const Dashboard = () => {
     getCoreRowModel: getCoreRowModel(),
   })
 
-  console.log('rendered')
-  console.log('table', table)
+  // console.log('rendered')
   return (
     <>
-      {/* {!roadSegments.length ? (
+      {!roadSegments.length ? (
         <h2>Loading</h2>
       ) : (
         <CCard className="mb-4">
           <CCardBody>
             <CRow>
-              <h4 id="traffic" className="card-title mb-0">
-                Traffic
+              <h4 id="road-segments" className="card-title mb-0">
+                Data Ruas
               </h4>
             </CRow>
-            <CTable small striped hover bordered responsive>
-              <CTableHead>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <CTableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <CTableHeaderCell key={header.id}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(header.column.columnDef.header, header.getContext())}
-                      </CTableHeaderCell>
-                    ))}
-                  </CTableRow>
-                ))}
-              </CTableHead>
-              <CTableBody>
-                {table.getRowModel().rows.map((row) => (
-                  <CTableRow key={row.id}>
-                    {row.getVisibleCells().map((cell) => (
-                      <CTableDataCell key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </CTableDataCell>
-                    ))}
-                  </CTableRow>
-                ))}
-              </CTableBody>
-            </CTable>
-            <div className="h-4" />
-            <button onClick={() => rerender()} className="border p-2">
-              Rerender
-            </button>
+            <CRow className="mt-4">
+              <CTable align="middle" small striped hover bordered responsive>
+                <CTableHead>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <CTableRow key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => (
+                        <CTableHeaderCell key={header.id} className="text-center">
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(header.column.columnDef.header, header.getContext())}
+                        </CTableHeaderCell>
+                      ))}
+                    </CTableRow>
+                  ))}
+                </CTableHead>
+                <CTableBody>
+                  {table.getRowModel().rows.map((row) => (
+                    <CTableRow key={row.id}>
+                      {row.getVisibleCells().map((cell) => (
+                        <CTableDataCell key={cell.id} className="text-center">
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </CTableDataCell>
+                      ))}
+                    </CTableRow>
+                  ))}
+                </CTableBody>
+              </CTable>
+              <div className="h-4" />
+              <button onClick={() => rerender()} className="border p-2">
+                Rerender
+              </button>
+            </CRow>
           </CCardBody>
         </CCard>
-      )} */}
+      )}
       {/* <CTable small striped hover bordered>
         <CTableHead>
           <CTableRow>
@@ -641,4 +643,4 @@ const Dashboard = () => {
   // )
 }
 
-export default Dashboard
+export default RoadSegments
