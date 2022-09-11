@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 
 import {
@@ -18,6 +18,12 @@ import {
   CTableHead,
   CTableHeaderCell,
   CTableRow,
+  CModal,
+  CModalHeader,
+  CModalTitle,
+  CModalBody,
+  CModalFooter,
+  CButton,
 } from '@coreui/react'
 // import { CChartLine } from '@coreui/react-chartjs'
 // import { getStyle, hexToRgba } from '@coreui/utils'
@@ -62,7 +68,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 
-import { PreviewPicture, SegmentActions } from '../../components/index'
+import { PreviewPicture, SegmentActions, Modal } from '../../components/index'
 
 // type Person = {
 //   firstName: string
@@ -128,8 +134,6 @@ const columns = [
     cell: (info) => <SegmentActions id={info.row.original.id} />,
   }),
 ]
-
-const apiUrl = 'https://630c319983986f74a7bb0dc5.mockapi.io/jm/ruas'
 
 const RoadSegments = () => {
   // const random = (min, max) => Math.floor(Math.random() * (max - min + 1) + min)
@@ -254,21 +258,42 @@ const RoadSegments = () => {
   //     activity: 'Last week',
   //   },
   // ]
+
   const dispatch = useDispatch()
   const roadSegments = useSelector((state) => state.roadSegments)
+  const apiUrl = useSelector((state) => state.apiUrl)
+  const showModal = useSelector((state) => state.showModal)
+  const selectedSegment = useSelector((state) => state.selectedSegment)
+
+  let unit, ruas, picture, date_create
+  if (selectedSegment) {
+    ;({ unit, ruas, picture, date_create } = selectedSegment)
+    date_create = new Date(date_create).toLocaleDateString('id-ID')
+  }
 
   useEffect(() => {
     requestSegments()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function requestSegments() {
-    // eslint-disable-next-line no-undef
     const res = await fetch(`${apiUrl}/ruas`)
     const resJson = await res.json()
 
     // console.log(json)
     dispatch({ type: 'set', roadSegments: resJson })
   }
+
+  // const toggleModal = () => {
+  //   dispatch({ type: 'set', showModal: !showModal })
+  //   // setCState(Object.assign(cState, { showModal: !cState.showModal }))
+  //   // console.log('modal toggled to:', showModal)
+  // }
+
+  // useEffect(() => {
+  //   if (selectedSegment) {
+  //     toggleModal()
+  //   }
+  // }, [selectedSegment]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // const [data, setData] = React.useState(() => [...defaultData])
   const rerender = React.useReducer(() => ({}), {})[1]
@@ -279,54 +304,111 @@ const RoadSegments = () => {
     getCoreRowModel: getCoreRowModel(),
   })
 
-  // console.log('rendered')
+  console.log('rendered')
+  console.log('showModal', showModal)
+
+  if (!roadSegments.length) {
+    return <h4>Loading...</h4>
+  }
+
   return (
     <>
-      {!roadSegments.length ? (
-        <h2>Loading</h2>
-      ) : (
-        <CCard className="mb-4">
-          <CCardBody>
-            <CRow>
-              <h4 id="road-segments" className="card-title mb-0">
-                Data Ruas
-              </h4>
-            </CRow>
-            <CRow className="mt-4">
-              <CTable align="middle" small striped hover bordered responsive>
-                <CTableHead>
-                  {table.getHeaderGroups().map((headerGroup) => (
-                    <CTableRow key={headerGroup.id}>
-                      {headerGroup.headers.map((header) => (
-                        <CTableHeaderCell key={header.id} className="text-center">
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(header.column.columnDef.header, header.getContext())}
-                        </CTableHeaderCell>
-                      ))}
-                    </CTableRow>
-                  ))}
-                </CTableHead>
-                <CTableBody>
-                  {table.getRowModel().rows.map((row) => (
-                    <CTableRow key={row.id}>
-                      {row.getVisibleCells().map((cell) => (
-                        <CTableDataCell key={cell.id} className="text-center">
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </CTableDataCell>
-                      ))}
-                    </CTableRow>
-                  ))}
-                </CTableBody>
-              </CTable>
-              <div className="h-4" />
-              <button onClick={() => rerender()} className="border p-2">
-                Rerender
-              </button>
-            </CRow>
-          </CCardBody>
-        </CCard>
-      )}
+      <CCard className="mb-4">
+        <CCardBody>
+          <CRow>
+            <h4 id="road-segments" className="card-title mb-0">
+              Data Ruas
+            </h4>
+          </CRow>
+          <CRow className="mt-4">
+            <CTable align="middle" small striped hover bordered responsive>
+              <CTableHead>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <CTableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <CTableHeaderCell key={header.id} className="text-center">
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(header.column.columnDef.header, header.getContext())}
+                      </CTableHeaderCell>
+                    ))}
+                  </CTableRow>
+                ))}
+              </CTableHead>
+              <CTableBody>
+                {table.getRowModel().rows.map((row) => (
+                  <CTableRow key={row.id}>
+                    {row.getVisibleCells().map((cell) => (
+                      <CTableDataCell key={cell.id} className="text-center">
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </CTableDataCell>
+                    ))}
+                  </CTableRow>
+                ))}
+              </CTableBody>
+            </CTable>
+            <div className="h-4" />
+            <button onClick={() => rerender()} className="border p-2">
+              Rerender
+            </button>
+          </CRow>
+        </CCardBody>
+      </CCard>
+      {/* {showModal ? ( */}
+      <CModal
+        visible={showModal}
+        alignment="center"
+        size="lg"
+        backdrop="static"
+        onClose={() => dispatch({ type: 'set', showModal: false })}
+      >
+        <CModalHeader>
+          <CModalTitle>Detail Ruas</CModalTitle>
+        </CModalHeader>
+        <CModalBody>
+          {selectedSegment ? (
+            <>
+              <dl className="row">
+                <dt className="col-sm-2">Unit</dt>
+                <dd className="col-sm-10">
+                  <dl className="row m-0">
+                    <dt className="col-sm-1">:</dt>
+                    <dd className="col-sm-10">{unit}</dd>
+                  </dl>
+                </dd>
+                <dt className="col-sm-2">Ruas</dt>
+                <dd className="col-sm-10">
+                  <dl className="row m-0">
+                    <dt className="col-sm-1">:</dt>
+                    <dd className="col-sm-10">{ruas.replace('ruas', 'Ruas')}</dd>
+                  </dl>
+                </dd>
+                <dt className="col-sm-2">Gambar</dt>
+                <dd className="col-sm-10">
+                  <dl className="row m-0">
+                    <dt className="col-sm-1">:</dt>
+                    <dd className="col-sm-10">{picture}</dd>
+                  </dl>
+                </dd>
+                <dt className="col-sm-2">Tanggal</dt>
+                <dd className="col-sm-10">
+                  <dl className="row m-0">
+                    <dt className="col-sm-1">:</dt>
+                    <dd className="col-sm-10">{date_create}</dd>
+                  </dl>
+                </dd>
+              </dl>
+            </>
+          ) : null}
+        </CModalBody>
+        <CModalFooter>
+          <CButton color="secondary" onClick={() => dispatch({ type: 'set', showModal: false })}>
+            Close
+          </CButton>
+          {/* <CButton color="primary">Save changes</CButton> */}
+        </CModalFooter>
+      </CModal>
+      {/* ) : null} */}
       {/* <CTable small striped hover bordered>
         <CTableHead>
           <CTableRow>
