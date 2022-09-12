@@ -9,7 +9,6 @@ import DocsLink from './DocsLink'
 import DocsExample from './DocsExample'
 import SegmentActions from './SegmentActions'
 import PreviewPicture from './PreviewPicture'
-import Modal from './Modal'
 
 export {
   AppBreadcrumb,
@@ -23,5 +22,4 @@ export {
   DocsExample,
   SegmentActions,
   PreviewPicture,
-  Modal,
 }
