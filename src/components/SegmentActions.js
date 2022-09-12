@@ -20,31 +20,35 @@ const SegmentActions = (props) => {
     const segment = roadSegments.filter((segment) => segment.id === id)[0]
     if (segment !== undefined) {
       console.log(segment)
-      dispatch({ type: 'set', selectedSegment: segment })
-      dispatch({ type: 'set', showModal: true })
-      // setSelectedSegment(segment)
-      // setCState(
-      //   Object.assign(cState, {
-      //     showModal: true,
-      //     segment: segment,
-      //   }),
-      // )
-      // setCState({
-      //   showModal: true,
-      //   segment: segment,
-      // })
+      dispatch({ type: 'set', selectedSegment: segment, showModalView: true })
+    }
+  }
+
+  const editSegment = () => {
+    const segment = roadSegments.filter((segment) => segment.id === id)[0]
+    if (segment !== undefined) {
+      console.log(segment)
+      dispatch({ type: 'set', selectedSegment: segment, showModalEdit: true })
+    }
+  }
+
+  const deleteSegment = () => {
+    const segment = roadSegments.filter((segment) => segment.id === id)[0]
+    if (segment !== undefined) {
+      console.log(segment)
+      dispatch({ type: 'set', selectedSegment: segment, showModalDelete: true })
     }
   }
 
   return (
     <>
-      <CButton color="secondary" variant="ghost" onClick={viewSegment}>
+      <CButton color="secondary" variant="ghost" onClick={editSegment}>
         <CIcon icon={cilPencil} size="sm" />
       </CButton>
       <CButton color="info" variant="ghost" onClick={viewSegment}>
         <CIcon icon={cilFolderOpen} size="sm" />
       </CButton>
-      <CButton color="danger" variant="ghost" onClick={viewSegment}>
+      <CButton color="danger" variant="ghost" onClick={deleteSegment}>
         <CIcon icon={cilTrash} size="sm" />
       </CButton>
     </>

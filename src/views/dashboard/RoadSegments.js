@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
+// import { Formik, Form, Field } from 'formik'
+// import * as Yup from 'yup'
 
 import {
   // CAvatar,
@@ -24,6 +26,12 @@ import {
   CModalBody,
   CModalFooter,
   CButton,
+  CForm,
+  CCol,
+  CFormLabel,
+  CFormInput,
+  CFormTextarea,
+  CSpinner,
 } from '@coreui/react'
 // import { CChartLine } from '@coreui/react-chartjs'
 // import { getStyle, hexToRgba } from '@coreui/utils'
@@ -115,7 +123,7 @@ const columns = [
   }),
   columnHelper.accessor('ruas', {
     header: () => 'Ruas',
-    cell: (info) => info.getValue().replace('ruas', 'Ruas'),
+    cell: (info) => info.getValue(),
   }),
   columnHelper.accessor('unit', {
     header: () => 'Unit Kerja',
@@ -134,6 +142,19 @@ const columns = [
     cell: (info) => <SegmentActions id={info.row.original.id} />,
   }),
 ]
+
+// const editSchema = Yup.object().shape({
+//   unit: Yup.string()
+//     .min(6, 'Minimum 6 karakter')
+//     .max(50, 'Maksimum 50 karakter')
+//     .required('Required'),
+//   ruas: Yup.string()
+//     .min(6, 'Minimum 6 karakter')
+//     .max(50, 'Maksimum 50 karakter')
+//     .required('Required'),
+//   // picture: Yup.string().email('Invalid email').required('Required'),
+//   date_create: Yup.string().email('Invalid email').required('Required'),
+// })
 
 const RoadSegments = () => {
   // const random = (min, max) => Math.floor(Math.random() * (max - min + 1) + min)
@@ -262,13 +283,69 @@ const RoadSegments = () => {
   const dispatch = useDispatch()
   const roadSegments = useSelector((state) => state.roadSegments)
   const apiUrl = useSelector((state) => state.apiUrl)
-  const showModal = useSelector((state) => state.showModal)
+  const showModalView = useSelector((state) => state.showModalView)
+  const showModalEdit = useSelector((state) => state.showModalEdit)
+  const showModalDelete = useSelector((state) => state.showModalDelete)
   const selectedSegment = useSelector((state) => state.selectedSegment)
+  const [loadingEdit, setLoadingEdit] = useState(false)
+  const [loadingDelete, setLoadingDelete] = useState(false)
+  // const [validated, setValidated] = useState(false)
 
-  let unit, ruas, picture, date_create
-  if (selectedSegment) {
-    ;({ unit, ruas, picture, date_create } = selectedSegment)
-    date_create = new Date(date_create).toLocaleDateString('id-ID')
+  // const [unit, setUnit] = useState(null)
+  // const [ruas, setRuas] = useState(null)
+  // const [picture, setPicture] = useState(null)
+  // const [dateCreate, setDateCreate] = useState(null)
+
+  // let unit, ruas, picture, date_create
+
+  // useEffect(() => {
+  //   if (selectedSegment) {
+  //     // ;({ unit, ruas, picture, date_create } = selectedSegment)
+  //     const { newUnit, newRuas, newPicture, newDateCreate } = selectedSegment
+  //     setUnit(newUnit)
+  //     setRuas(newRuas)
+  //     setPicture(newPicture)
+  //     setDateCreate(newDateCreate)
+  //   }
+  // }, [selectedSegment, showModalEdit])
+
+  const handleInput = (e) => {
+    switch (e.target.attributes.id.nodeValue) {
+      case 'unit':
+        console.log('unit', JSON.stringify(e.target.value))
+        // setUnit(e.target.value)
+        dispatch({
+          type: 'set',
+          selectedSegment: Object.assign({ ...selectedSegment }, { unit: e.target.value }),
+        })
+        break
+      case 'ruas':
+        console.log('ruas', JSON.stringify(e.target.value))
+        // setRuas(e.target.value)
+        dispatch({
+          type: 'set',
+          selectedSegment: Object.assign({ ...selectedSegment }, { ruas: e.target.value }),
+        })
+        break
+      case 'picture':
+        console.log('picture', JSON.stringify(e.target.value))
+        // setPicture(e.target.value)
+        dispatch({
+          type: 'set',
+          selectedSegment: Object.assign({ ...selectedSegment }, { picture: e.target.value }),
+        })
+        break
+      case 'date_create':
+        console.log('date_create', JSON.stringify(e.target.value))
+        // setDateCreate(e.target.value)
+        dispatch({
+          type: 'set',
+          selectedSegment: Object.assign({ ...selectedSegment }, { date_create: e.target.value }),
+        })
+        break
+      default:
+        break
+    }
   }
 
   useEffect(() => {
@@ -277,10 +354,10 @@ const RoadSegments = () => {
 
   async function requestSegments() {
     const res = await fetch(`${apiUrl}/ruas`)
-    const resJson = await res.json()
+    const json = await res.json()
 
     // console.log(json)
-    dispatch({ type: 'set', roadSegments: resJson })
+    dispatch({ type: 'set', roadSegments: json })
   }
 
   // const toggleModal = () => {
@@ -304,8 +381,51 @@ const RoadSegments = () => {
     getCoreRowModel: getCoreRowModel(),
   })
 
+  async function editSegment() {
+    // eslint-disable-next-line no-undef
+    const res = await fetch(`${apiUrl}/ruas/${selectedSegment.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(selectedSegment),
+    })
+    const json = await res.json()
+    if (json) {
+      setLoadingEdit(false)
+      dispatch({ type: 'set', selectedSegment: json, showModalEdit: false })
+      requestSegments()
+    }
+  }
+
+  async function deleteSegment() {
+    // eslint-disable-next-line no-undef
+    const res = await fetch(`${apiUrl}/ruas/${selectedSegment.id}`, {
+      method: 'DELETE',
+    })
+    const json = await res.json()
+    if (json) {
+      setLoadingDelete(false)
+      dispatch({ type: 'set', showModalDelete: false })
+      requestSegments()
+    }
+  }
+
+  const handleSubmit = (e) => {
+    // console.log(e)
+    e.preventDefault()
+    setLoadingEdit(true)
+    editSegment()
+  }
+
+  const handleDelete = (e) => {
+    // console.log(e)
+    setLoadingDelete(true)
+    deleteSegment()
+  }
+
   console.log('rendered')
-  console.log('showModal', showModal)
+  // console.log('showModal', showModal)
 
   if (!roadSegments.length) {
     return <h4>Loading...</h4>
@@ -354,61 +474,224 @@ const RoadSegments = () => {
           </CRow>
         </CCardBody>
       </CCard>
-      {/* {showModal ? ( */}
+
       <CModal
-        visible={showModal}
+        visible={showModalView}
         alignment="center"
         size="lg"
         backdrop="static"
-        onClose={() => dispatch({ type: 'set', showModal: false })}
+        onClose={() => dispatch({ type: 'set', showModalView: false })}
       >
         <CModalHeader>
           <CModalTitle>Detail Ruas</CModalTitle>
         </CModalHeader>
-        <CModalBody>
-          {selectedSegment ? (
-            <>
+        {selectedSegment ? (
+          <CModalBody>
+            <dl className="row">
+              <dt className="col-sm-2">Unit</dt>
+              <dd className="col-sm-10">
+                <dl className="row m-0">
+                  <dt className="col-sm-1">:</dt>
+                  <dd className="col-sm-10">{selectedSegment.unit}</dd>
+                </dl>
+              </dd>
+              <dt className="col-sm-2">Ruas</dt>
+              <dd className="col-sm-10">
+                <dl className="row m-0">
+                  <dt className="col-sm-1">:</dt>
+                  <dd className="col-sm-10">{selectedSegment.ruas}</dd>
+                </dl>
+              </dd>
+              <dt className="col-sm-2">Gambar</dt>
+              <dd className="col-sm-10">
+                <dl className="row m-0">
+                  <dt className="col-sm-1">:</dt>
+                  <dd className="col-sm-10">{selectedSegment.picture}</dd>
+                </dl>
+              </dd>
+              <dt className="col-sm-2">Tanggal</dt>
+              <dd className="col-sm-10">
+                <dl className="row m-0">
+                  <dt className="col-sm-1">:</dt>
+                  <dd className="col-sm-10">
+                    {new Date(selectedSegment.date_create).toLocaleDateString()}
+                  </dd>
+                </dl>
+              </dd>
+            </dl>
+          </CModalBody>
+        ) : (
+          <CModalBody>
+            <p>Data tidak ditemukan</p>
+          </CModalBody>
+        )}
+        <CModalFooter>
+          <CButton
+            color="secondary"
+            onClick={() => dispatch({ type: 'set', showModalView: false })}
+          >
+            Tutup
+          </CButton>
+          {/* <CButton color="primary">Save changes</CButton> */}
+        </CModalFooter>
+      </CModal>
+
+      <CModal
+        visible={showModalEdit}
+        alignment="center"
+        size="lg"
+        backdrop="static"
+        onClose={() => dispatch({ type: 'set', showModalEdit: false })}
+      >
+        <CModalHeader>
+          <CModalTitle>Edit Ruas</CModalTitle>
+        </CModalHeader>
+        {selectedSegment ? (
+          <>
+            <CForm onSubmit={(e) => handleSubmit(e)}>
+              <CModalBody>
+                <div className="mb-3">
+                  <CFormLabel htmlFor="unit">Unit</CFormLabel>
+                  <CFormInput
+                    type="text"
+                    id="unit"
+                    value={selectedSegment.unit}
+                    onChange={(e) => handleInput(e)}
+                  />
+                </div>
+                <div className="mb-3">
+                  <CFormLabel htmlFor="ruas">Ruas</CFormLabel>
+                  <CFormInput
+                    type="text"
+                    id="ruas"
+                    value={selectedSegment.ruas}
+                    onChange={(e) => handleInput(e)}
+                  />
+                </div>
+                <div className="mb-3">
+                  <CFormLabel htmlFor="picture">Gambar</CFormLabel>
+                  <CFormInput
+                    type="text"
+                    id="picture"
+                    value={selectedSegment.picture}
+                    onChange={(e) => handleInput(e)}
+                  />
+                </div>
+                <div className="mb-3">
+                  <CFormLabel htmlFor="date_create">Tanggal</CFormLabel>
+                  <CFormInput
+                    type="date"
+                    id="date_create"
+                    value={selectedSegment.date_create}
+                    onChange={(e) => handleInput(e)}
+                  />
+                </div>
+              </CModalBody>
+              <CModalFooter>
+                <CButton
+                  color="secondary"
+                  onClick={() => dispatch({ type: 'set', showModalEdit: false })}
+                >
+                  Tutup
+                </CButton>
+                {loadingEdit ? (
+                  <CButton disabled>
+                    Loading&nbsp;
+                    <CSpinner component="span" size="sm" aria-hidden="true" />
+                  </CButton>
+                ) : (
+                  <CButton type="submit" color="primary">
+                    Simpan
+                  </CButton>
+                )}
+              </CModalFooter>
+            </CForm>
+          </>
+        ) : (
+          <>
+            <CModalBody>
+              <p>Data tidak ditemukan</p>
+            </CModalBody>
+            <CModalFooter>
+              <CButton
+                color="secondary"
+                onClick={() => dispatch({ type: 'set', showModalEdit: false })}
+              >
+                Tutup
+              </CButton>
+              {/* <CButton color="primary">Simpan</CButton> */}
+            </CModalFooter>
+          </>
+        )}
+      </CModal>
+
+      <CModal
+        visible={showModalDelete}
+        alignment="center"
+        backdrop="static"
+        onClose={() => dispatch({ type: 'set', showModalDelete: false })}
+      >
+        <CModalHeader>
+          <CModalTitle>Hapus Ruas</CModalTitle>
+        </CModalHeader>
+        {selectedSegment ? (
+          <>
+            <CModalBody>
               <dl className="row">
                 <dt className="col-sm-2">Unit</dt>
                 <dd className="col-sm-10">
                   <dl className="row m-0">
                     <dt className="col-sm-1">:</dt>
-                    <dd className="col-sm-10">{unit}</dd>
+                    <dd className="col-sm-10">{selectedSegment.unit}</dd>
                   </dl>
                 </dd>
                 <dt className="col-sm-2">Ruas</dt>
                 <dd className="col-sm-10">
                   <dl className="row m-0">
                     <dt className="col-sm-1">:</dt>
-                    <dd className="col-sm-10">{ruas.replace('ruas', 'Ruas')}</dd>
-                  </dl>
-                </dd>
-                <dt className="col-sm-2">Gambar</dt>
-                <dd className="col-sm-10">
-                  <dl className="row m-0">
-                    <dt className="col-sm-1">:</dt>
-                    <dd className="col-sm-10">{picture}</dd>
-                  </dl>
-                </dd>
-                <dt className="col-sm-2">Tanggal</dt>
-                <dd className="col-sm-10">
-                  <dl className="row m-0">
-                    <dt className="col-sm-1">:</dt>
-                    <dd className="col-sm-10">{date_create}</dd>
+                    <dd className="col-sm-10">{selectedSegment.ruas}</dd>
                   </dl>
                 </dd>
               </dl>
-            </>
-          ) : null}
-        </CModalBody>
-        <CModalFooter>
-          <CButton color="secondary" onClick={() => dispatch({ type: 'set', showModal: false })}>
-            Close
-          </CButton>
-          {/* <CButton color="primary">Save changes</CButton> */}
-        </CModalFooter>
+              <p>Apakah Anda yakin ingin menghapus data ruas ini?</p>
+            </CModalBody>
+            <CModalFooter>
+              {loadingDelete ? (
+                <CButton disabled>
+                  Menghapus&nbsp;
+                  <CSpinner component="span" size="sm" aria-hidden="true" />
+                </CButton>
+              ) : (
+                <CButton onClick={handleDelete} color="primary">
+                  Ya
+                </CButton>
+              )}
+              <CButton
+                color="secondary"
+                onClick={() => dispatch({ type: 'set', showModalDelete: false })}
+              >
+                Tidak
+              </CButton>
+            </CModalFooter>
+          </>
+        ) : (
+          <>
+            <CModalBody>
+              <p>Data tidak ditemukan</p>
+            </CModalBody>
+            <CModalFooter>
+              <CButton
+                color="secondary"
+                onClick={() => dispatch({ type: 'set', showModalEdit: false })}
+              >
+                Tutup
+              </CButton>
+              {/* <CButton color="primary">Simpan</CButton> */}
+            </CModalFooter>
+          </>
+        )}
       </CModal>
-      {/* ) : null} */}
+
       {/* <CTable small striped hover bordered>
         <CTableHead>
           <CTableRow>
