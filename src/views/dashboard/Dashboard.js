@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 
 import {
@@ -18,6 +18,21 @@ import {
   CTableHead,
   CTableHeaderCell,
   CTableRow,
+  CModal,
+  CModalHeader,
+  CModalTitle,
+  CModalBody,
+  CModalFooter,
+  CButton,
+  CForm,
+  CCol,
+  CFormLabel,
+  CFormInput,
+  CSpinner,
+  CImage,
+  CFormSelect,
+  CPagination,
+  CPaginationItem,
 } from '@coreui/react'
 // import { CChartLine } from '@coreui/react-chartjs'
 // import { getStyle, hexToRgba } from '@coreui/utils'
@@ -59,8 +74,12 @@ import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
   useReactTable,
 } from '@tanstack/react-table'
+
+import { PreviewPicture, SegmentActions } from '../../components/index'
 
 // type Person = {
 //   firstName: string
@@ -71,64 +90,74 @@ import {
 //   progress: number
 // }
 
-const defaultData = [
-  {
-    firstName: 'tanner',
-    lastName: 'linsley',
-    age: 24,
-    visits: 100,
-    status: 'In Relationship',
-    progress: 50,
-  },
-  {
-    firstName: 'tandy',
-    lastName: 'miller',
-    age: 40,
-    visits: 40,
-    status: 'Single',
-    progress: 80,
-  },
-  {
-    firstName: 'joe',
-    lastName: 'dirte',
-    age: 45,
-    visits: 20,
-    status: 'Complicated',
-    progress: 10,
-  },
-]
+// const defaultData = [
+//   {
+//     firstName: 'tanner',
+//     lastName: 'linsley',
+//     age: 24,
+//     visits: 100,
+//     status: 'In Relationship',
+//     progress: 50,
+//   },
+//   {
+//     firstName: 'tandy',
+//     lastName: 'miller',
+//     age: 40,
+//     visits: 40,
+//     status: 'Single',
+//     progress: 80,
+//   },
+//   {
+//     firstName: 'joe',
+//     lastName: 'dirte',
+//     age: 45,
+//     visits: 20,
+//     status: 'Complicated',
+//     progress: 10,
+//   },
+// ]
+
+const formatDate = (date) => {
+  const today = new Date(date)
+  const yyyy = today.getFullYear()
+  let mm = today.getMonth() + 1
+  let dd = today.getDate()
+
+  if (dd < 10) dd = '0' + dd
+  if (mm < 10) mm = '0' + mm
+
+  const formattedDate = `${dd}/${mm}/${yyyy}`
+  return formattedDate
+}
 
 const columnHelper = createColumnHelper()
 
 const columns = [
   columnHelper.accessor('id', {
     header: () => 'No',
-    cell: (info) => info.getValue(),
-    footer: (info) => info.column.id,
+    cell: (info) => info.row.index + 1,
   }),
   columnHelper.accessor('ruas', {
     header: () => 'Ruas',
     cell: (info) => info.getValue(),
-    footer: (info) => info.column.id,
   }),
   columnHelper.accessor('unit', {
     header: () => 'Unit Kerja',
     cell: (info) => info.getValue(),
-    footer: (info) => info.column.id,
   }),
-  columnHelper.accessor('picture', {
-    header: () => 'Gambar',
-    cell: (info) => info.getValue(),
-    footer: (info) => info.column.id,
+  columnHelper.display({
+    header: 'Gambar',
+    cell: (info) => <PreviewPicture id={info.row.original.id} />,
   }),
   columnHelper.accessor('date_create', {
     header: 'Tanggal',
-    cell: (info) => info.getValue(),
-    footer: (info) => info.column.id,
+    cell: (info) => formatDate(new Date(info.getValue())),
   }),
+  // columnHelper.display({
+  //   header: 'Aksi',
+  //   cell: (info) => <SegmentActions id={info.row.original.id} />,
+  // }),
 ]
-
-const apiUrl = 'https://630c319983986f74a7bb0dc5.mockapi.io/jm/ruas'
 
 const Dashboard = () => {
   // const random = (min, max) => Math.floor(Math.random() * (max - min + 1) + min)
@@ -255,49 +284,162 @@ const Dashboard = () => {
   // ]
   const dispatch = useDispatch()
   const roadSegments = useSelector((state) => state.roadSegments)
+  const apiUrl = useSelector((state) => state.apiUrl)
+
+  const showModalView = useSelector((state) => state.showModalView)
+  const showModalEdit = useSelector((state) => state.showModalEdit)
+  const showModalDelete = useSelector((state) => state.showModalDelete)
+  const showModalPreview = useSelector((state) => state.showModalPreview)
+  const showModalAdd = useSelector((state) => state.showModalAdd)
+
+  const selectedSegment = useSelector((state) => state.selectedSegment)
+  const [loadingEdit, setLoadingEdit] = useState(false)
+  const [loadingDelete, setLoadingDelete] = useState(false)
+  const [loadingAdd, setLoadingAdd] = useState(false)
+
+  const handleInput = (e) => {
+    e.preventDefault()
+
+    switch (e.target.attributes.id.nodeValue) {
+      case 'unit':
+        // console.log('unit', JSON.stringify(e.target.value))
+        dispatch({
+          type: 'set',
+          selectedSegment: Object.assign({ ...selectedSegment }, { unit: e.target.value }),
+        })
+        break
+      case 'ruas':
+        // console.log('ruas', JSON.stringify(e.target.value))
+        dispatch({
+          type: 'set',
+          selectedSegment: Object.assign({ ...selectedSegment }, { ruas: e.target.value }),
+        })
+        break
+      case 'picture':
+        // if (!imgEl.current) {
+        //   imgEl.current = document.getElementById('files')
+        // }
+        // console.log('picture', imgEl.current.files[0])
+        dispatch({
+          type: 'set',
+          selectedSegment: Object.assign({ ...selectedSegment }, { picture: e.target.value }),
+        })
+        break
+      case 'date_create':
+        // console.log('date_create', JSON.stringify(e.target.value))
+        dispatch({
+          type: 'set',
+          selectedSegment: Object.assign({ ...selectedSegment }, { date_create: e.target.value }),
+        })
+        break
+      default:
+        break
+    }
+  }
 
   useEffect(() => {
     requestSegments()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function requestSegments() {
-    // eslint-disable-next-line no-undef
     const res = await fetch(`${apiUrl}/ruas`)
-    const resJson = await res.json()
+    const json = await res.json()
 
     // console.log(json)
-    dispatch({ type: 'set', roadSegments: resJson })
+    dispatch({ type: 'set', roadSegments: json })
   }
 
-  const [data, setData] = React.useState(() => [...defaultData])
+  // const toggleModal = () => {
+  //   dispatch({ type: 'set', showModal: !showModal })
+  //   // setCState(Object.assign(cState, { showModal: !cState.showModal }))
+  //   // console.log('modal toggled to:', showModal)
+  // }
+
+  // useEffect(() => {
+  //   if (selectedSegment) {
+  //     toggleModal()
+  //   }
+  // }, [selectedSegment]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // const [data, setData] = React.useState(() => [...defaultData])
   const rerender = React.useReducer(() => ({}), {})[1]
 
   const table = useReactTable({
     data: roadSegments,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
   })
 
+  async function editSegment() {
+    // eslint-disable-next-line no-undef
+    const res = await fetch(`${apiUrl}/ruas/${selectedSegment.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(selectedSegment),
+    })
+    const json = await res.json()
+    if (json) {
+      setLoadingEdit(false)
+      dispatch({ type: 'set', showModalEdit: false })
+      requestSegments()
+    }
+  }
+
+  async function deleteSegment() {
+    const res = await fetch(`${apiUrl}/ruas/${selectedSegment.id}`, {
+      method: 'DELETE',
+    })
+    const json = await res.json()
+    if (json) {
+      setLoadingDelete(false)
+      dispatch({ type: 'set', showModalDelete: false })
+      requestSegments()
+    }
+  }
+
+  async function addSegment() {
+    const res = await fetch(`${apiUrl}/ruas`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(selectedSegment),
+    })
+    const json = await res.json()
+    if (json) {
+      setLoadingAdd(false)
+      dispatch({ type: 'set', showModalAdd: false })
+      requestSegments()
+    }
+  }
+
   console.log('rendered')
-  console.log('table', table)
+  // console.log('showModal', showModal)
+
+  if (!roadSegments.length) {
+    return <h4>Loading...</h4>
+  }
+
   return (
     <>
-      {/* {!roadSegments.length ? (
-        <h2>Loading</h2>
-      ) : (
-        <CCard className="mb-4">
-          <CCardBody>
-            <CRow>
-              <h4 id="traffic" className="card-title mb-0">
-                Traffic
-              </h4>
-            </CRow>
-            <CTable small striped hover bordered responsive>
+      <CCard className="mb-4">
+        <CCardBody>
+          <CRow>
+            <h4 id="dashboard" className="card-title mb-0">
+              Dashboard
+            </h4>
+          </CRow>
+          <CRow className="mt-4">
+            <CTable align="middle" small striped hover bordered responsive>
               <CTableHead>
                 {table.getHeaderGroups().map((headerGroup) => (
                   <CTableRow key={headerGroup.id}>
                     {headerGroup.headers.map((header) => (
-                      <CTableHeaderCell key={header.id}>
+                      <CTableHeaderCell key={header.id} className="text-center">
                         {header.isPlaceholder
                           ? null
                           : flexRender(header.column.columnDef.header, header.getContext())}
@@ -310,7 +452,7 @@ const Dashboard = () => {
                 {table.getRowModel().rows.map((row) => (
                   <CTableRow key={row.id}>
                     {row.getVisibleCells().map((cell) => (
-                      <CTableDataCell key={cell.id}>
+                      <CTableDataCell key={cell.id} className="text-center">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </CTableDataCell>
                     ))}
@@ -318,13 +460,103 @@ const Dashboard = () => {
                 ))}
               </CTableBody>
             </CTable>
-            <div className="h-4" />
-            <button onClick={() => rerender()} className="border p-2">
-              Rerender
-            </button>
-          </CCardBody>
-        </CCard>
-      )} */}
+            <CRow>
+              <CCol>
+                <CPagination aria-label="Page navigation">
+                  <CPaginationItem
+                    aria-label="Previous"
+                    onClick={() => table.previousPage()}
+                    disabled={!table.getCanPreviousPage()}
+                  >
+                    <span aria-hidden="true" className="pe-none">
+                      &laquo;
+                    </span>
+                  </CPaginationItem>
+                  <CPaginationItem
+                    aria-label="Next"
+                    onClick={() => table.nextPage()}
+                    disabled={!table.getCanNextPage()}
+                  >
+                    <span aria-hidden="true" className="pe-none">
+                      &raquo;
+                    </span>
+                  </CPaginationItem>
+                  <span className="ms-2">
+                    <span className="align-middle">Page </span>
+                    <strong className="align-middle">
+                      {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+                    </strong>
+                  </span>
+                </CPagination>
+              </CCol>
+              <CCol className="flex items-center gap-2">
+                <div className="d-md-flex justify-content-md-end">
+                  <div className="flex items-center gap-1">Show:</div>
+                  <span className="flex items-center gap-1">
+                    <CFormSelect
+                      aria-label="Default select example"
+                      size="sm"
+                      className="ms-2"
+                      value={table.getState().pagination.pageSize}
+                      onChange={(e) => {
+                        table.setPageSize(Number(e.target.value))
+                      }}
+                    >
+                      {[10, 20, 30].map((pageSize) => (
+                        <option key={pageSize} value={pageSize}>
+                          {pageSize}
+                        </option>
+                      ))}
+                    </CFormSelect>
+                  </span>
+                </div>
+              </CCol>
+            </CRow>
+          </CRow>
+        </CCardBody>
+      </CCard>
+
+      <CModal
+        visible={showModalPreview}
+        alignment="center"
+        // size="lg"
+        backdrop="static"
+        onClose={() => dispatch({ type: 'set', showModalPreview: false })}
+      >
+        <CModalHeader>
+          <CModalTitle>Preview Gambar - {selectedSegment.ruas}</CModalTitle>
+        </CModalHeader>
+        {selectedSegment.picture ? (
+          <>
+            <CModalBody>
+              <CImage fluid src={selectedSegment.picture} />
+            </CModalBody>
+            <CModalFooter>
+              <CButton
+                color="secondary"
+                onClick={() => dispatch({ type: 'set', showModalPreview: false })}
+              >
+                Tutup
+              </CButton>
+            </CModalFooter>
+          </>
+        ) : (
+          <>
+            <CModalBody>
+              <p>Gambar tidak ditemukan</p>
+            </CModalBody>
+            <CModalFooter>
+              <CButton
+                color="secondary"
+                onClick={() => dispatch({ type: 'set', showModalPreview: false })}
+              >
+                Tutup
+              </CButton>
+            </CModalFooter>
+          </>
+        )}
+      </CModal>
+
       {/* <CTable small striped hover bordered>
         <CTableHead>
           <CTableRow>

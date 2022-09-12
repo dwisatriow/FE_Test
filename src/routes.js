@@ -54,7 +54,7 @@ const RoadSegments = React.lazy(() => import('./views/dashboard/RoadSegments'))
 const routes = [
   { path: '/', exact: true, name: 'Home' },
   { path: '/dashboard', name: 'Dashboard', element: Dashboard },
-  { path: '/road-segments', name: 'Data Ruas', element: RoadSegments },
+  { path: '/road-segments', name: 'Daftar Ruas', element: RoadSegments },
   // { path: '/theme', name: 'Theme', element: Colors, exact: true },
   // { path: '/theme/colors', name: 'Colors', element: Colors },
   // { path: '/theme/typography', name: 'Typography', element: Typography },

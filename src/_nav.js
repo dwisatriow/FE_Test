@@ -34,7 +34,7 @@ const _nav = [
   },
   {
     component: CNavItem,
-    name: 'Data Ruas',
+    name: 'Daftar Ruas',
     to: '/road-segments',
     icon: <CIcon icon={cibOpenstreetmap} customClassName="nav-icon" />,
     // badge: {

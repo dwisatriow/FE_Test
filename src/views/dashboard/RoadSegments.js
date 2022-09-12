@@ -486,7 +486,7 @@ const RoadSegments = () => {
           <CRow>
             <CCol>
               <h4 id="road-segments" className="card-title mb-0">
-                Data Ruas
+                Daftar Ruas
               </h4>
             </CCol>
             <CCol>
