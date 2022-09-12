@@ -31,6 +31,8 @@ import {
   CSpinner,
   CImage,
   CFormSelect,
+  CPagination,
+  CPaginationItem,
 } from '@coreui/react'
 // import { CChartLine } from '@coreui/react-chartjs'
 // import { getStyle, hexToRgba } from '@coreui/utils'
@@ -72,6 +74,8 @@ import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
   useReactTable,
 } from '@tanstack/react-table'
 
@@ -400,6 +404,8 @@ const RoadSegments = () => {
     data: roadSegments,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
   })
 
   async function editSegment() {
@@ -487,6 +493,7 @@ const RoadSegments = () => {
               <div className="d-md-flex justify-content-md-end">
                 <CButton
                   color="primary"
+                  variant="outline"
                   size="sm"
                   className="me-md-2"
                   onClick={() =>
@@ -529,10 +536,58 @@ const RoadSegments = () => {
                 ))}
               </CTableBody>
             </CTable>
-            <div className="h-4" />
-            <button onClick={() => rerender()} className="border p-2">
-              Rerender
-            </button>
+            <CRow>
+              <CCol>
+                <CPagination aria-label="Page navigation">
+                  <CPaginationItem
+                    aria-label="Previous"
+                    onClick={() => table.previousPage()}
+                    disabled={!table.getCanPreviousPage()}
+                  >
+                    <span aria-hidden="true" className="pe-none">
+                      &laquo;
+                    </span>
+                  </CPaginationItem>
+                  <CPaginationItem
+                    aria-label="Next"
+                    onClick={() => table.nextPage()}
+                    disabled={!table.getCanNextPage()}
+                  >
+                    <span aria-hidden="true" className="pe-none">
+                      &raquo;
+                    </span>
+                  </CPaginationItem>
+                  <span className="ms-2">
+                    <span className="align-middle">Page </span>
+                    <strong className="align-middle">
+                      {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+                    </strong>
+                  </span>
+                </CPagination>
+              </CCol>
+              <CCol className="flex items-center gap-2">
+                <div className="d-md-flex justify-content-md-end">
+                  <div className="flex items-center gap-1">Show:</div>
+                  <span className="flex items-center gap-1">
+                    <CFormSelect
+                      aria-label="Default select example"
+                      size="sm"
+                      className="ms-2"
+                      value={table.getState().pagination.pageSize}
+                      onChange={(e) => {
+                        table.setPageSize(Number(e.target.value))
+                      }}
+                    >
+                      {[10, 20, 30].map((pageSize) => (
+                        <option key={pageSize} value={pageSize}>
+                          {pageSize}
+                        </option>
+                      ))}
+                    </CFormSelect>
+                  </span>
+                </div>
+              </CCol>
+            </CRow>
           </CRow>
         </CCardBody>
       </CCard>

@@ -17,7 +17,7 @@ const PreviewPicture = (props) => {
   }
 
   return (
-    <CButton color="info" className="text-white" size="sm" onClick={previewImage}>
+    <CButton color="primary" className="text-white" size="sm" onClick={previewImage}>
       {'Preview Gambar'}
     </CButton>
   )

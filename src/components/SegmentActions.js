@@ -43,13 +43,13 @@ const SegmentActions = (props) => {
   return (
     <>
       <CButton color="secondary" variant="ghost" onClick={editSegment}>
-        <CIcon icon={cilPencil} size="sm" />
+        <CIcon icon={cilPencil} size="md" />
       </CButton>
       <CButton color="info" variant="ghost" onClick={viewSegment}>
-        <CIcon icon={cilFolderOpen} size="sm" />
+        <CIcon icon={cilFolderOpen} size="md" />
       </CButton>
       <CButton color="danger" variant="ghost" onClick={deleteSegment}>
-        <CIcon icon={cilTrash} size="sm" />
+        <CIcon icon={cilTrash} size="md" />
       </CButton>
     </>
   )
